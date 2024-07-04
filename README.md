@@ -65,9 +65,7 @@ namespace Application
     }
 }
 ```
-<video controls>
-  <source src="readme/request.mp4" type="video/mp4">
-</video>
+<img src="readme/request.gif">
 
 ### Subscribing to and unsubscribing from events happening in the client - `.Subscribe()` and `.Unsubscribe()`
 
@@ -115,9 +113,7 @@ namespace Application
     }
 }
 ```
-<video controls>
-  <source src="readme/subscribe.mp4" type="video/mp4">
-</video>
+<img src="readme/subscribe.gif">
 
 ### Getting summoner data - `.GetSummoner()` and `.GetSummoners()`
 
@@ -212,6 +208,4 @@ namespace Application
     }
 }
 ```
-<video controls>
-  <source src="readme/events.mp4" type="video/mp4">
-</video>
+<img src="readme/events.gif">
