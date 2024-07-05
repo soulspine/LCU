@@ -14,7 +14,7 @@ using System.Collections.Concurrent;
 
 namespace soulspine.LCU //https://github.com/soulspine/LCU
 {
-    internal class LeagueClient
+    public class LeagueClient
     {
         // process 
         private int? lcuPort = null;
@@ -153,15 +153,13 @@ namespace soulspine.LCU //https://github.com/soulspine/LCU
             socketConnection.OnClose += handleWebsocketDisconnection;
             socketConnection.Connect();
 
-            isConnected = true;
-
             _websocketSubscriptionSend("OnJsonApiEvent", 5, isKey: true); //subscribing to all events because then you can assign methods to endpoint and not event - tldr its simpler and safer
 
             isInLobby = false;
             isInChampSelect = false;
             isInGame = false;
 
-            HttpResponseMessage gameflowResponse = request(requestMethod.GET, "/lol-gameflow/v1/gameflow-phase").Result;
+            HttpResponseMessage gameflowResponse = request(requestMethod.GET, "/lol-gameflow/v1/gameflow-phase", ignoreReadyCheck:true).Result;
 
             if (gameflowResponse == null || gameflowResponse.StatusCode != HttpStatusCode.OK)
             {
@@ -177,6 +175,7 @@ namespace soulspine.LCU //https://github.com/soulspine/LCU
             localSummonerRegion = getSummonerRegionFromLCU(localSummoner).Result;
 
             OnConnected?.Invoke();
+            isConnected = true;
 
             tryingToConnect = false;
         }
@@ -314,7 +313,7 @@ namespace soulspine.LCU //https://github.com/soulspine/LCU
 
         private bool _websocketSubscriptionSend(string endpoint, int opcode, bool isKey = false)
         {
-            if (!isConnected || socketConnection == null)
+            if (socketConnection == null)
             {
                 switch (opcode)
                 {
@@ -571,7 +570,7 @@ namespace soulspine.LCU //https://github.com/soulspine/LCU
 
         private Summoner getLocalSummonerFromLCU()
         {
-            HttpResponseMessage response = request(requestMethod.GET, "/lol-summoner/v1/current-summoner").Result;
+            HttpResponseMessage response = request(requestMethod.GET, "/lol-summoner/v1/current-summoner", ignoreReadyCheck: true).Result;
 
             if (response == null || response.StatusCode != HttpStatusCode.OK)
             {
@@ -585,7 +584,7 @@ namespace soulspine.LCU //https://github.com/soulspine/LCU
 
         private async Task<string> getSummonerRegionFromLCU(Summoner summoner)
         {
-            HttpResponseMessage response = await request(requestMethod.GET, $"/riotclient/region-locale");
+            HttpResponseMessage response = await request(requestMethod.GET, $"/riotclient/region-locale", ignoreReadyCheck: true);
 
             if (response == null || response.StatusCode != HttpStatusCode.OK)
             {
@@ -600,12 +599,12 @@ namespace soulspine.LCU //https://github.com/soulspine/LCU
         }
     }
 
-    internal enum requestMethod
+    public enum requestMethod
     {
         GET, POST, PATCH, DELETE, PUT
     }
 
-    internal class OnWebsocketEventArgs : EventArgs
+    public class OnWebsocketEventArgs : EventArgs
     {   // URI    
         public string Endpoint { get; set; }
 
@@ -616,7 +615,7 @@ namespace soulspine.LCU //https://github.com/soulspine/LCU
         public dynamic Data { get; set; }
     }
 
-    internal class RerollPoints
+    public class RerollPoints
     {
         public int currentPoints { get; set; }
         public int maxRolls { get; set; }
@@ -625,7 +624,7 @@ namespace soulspine.LCU //https://github.com/soulspine/LCU
         public int pointsToReroll { get; set; }
     }
 
-    internal class Summoner
+    public class Summoner
     {
         public Int64 accountId { get; set; }
         public string displayName { get; set; }
