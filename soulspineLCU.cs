@@ -250,6 +250,11 @@ namespace soulspine.LCU //https://github.com/soulspine/LCU
             {
                 gameflowEventProc(args.Data.ToString());
             }
+            // current summoner info changed
+            else if (args.Endpoint == "/lol-summoner/v1/current-summoner")
+            {
+                localSummoner = JsonConvert.DeserializeObject<Summoner>(args.Data.ToString());
+            }
 
             if (!subscriptions.ContainsKey(args.Endpoint)) return;
 
