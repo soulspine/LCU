@@ -173,7 +173,7 @@ namespace soulspine.LCU //https://github.com/soulspine/LCU
 
 
             localSummoner = getLocalSummonerFromLCU();
-            localSummonerRegion = getSummonerRegionFromLCU(localSummoner).Result;
+            localSummonerRegion = getSummonerRegionFromLCU().Result;
 
             OnConnected?.Invoke();
             isConnected = true;
@@ -591,7 +591,7 @@ namespace soulspine.LCU //https://github.com/soulspine/LCU
             }
         }
 
-        private async Task<string> getSummonerRegionFromLCU(Summoner summoner)
+        private async Task<string> getSummonerRegionFromLCU()
         {
             HttpResponseMessage response = await request(requestMethod.GET, $"/riotclient/region-locale", ignoreReadyCheck: true);
 

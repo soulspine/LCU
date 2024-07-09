@@ -113,6 +113,7 @@ namespace Application
     }
 }
 ```
+
 <img src="readme/subscribe.gif">
 
 ### Getting summoner data - `.GetSummoner()` and `.GetSummoners()`
@@ -161,7 +162,7 @@ namespace Application
 
 <img src="readme/getsummoner.png">
 
-### Built-in events
+### Built-in events and variables
 LeagueClient class h a few built-in events that you can bind actions to. Those musn't have any arguments. Available events are:
 - `OnConnected` - occurs when the client is connected
 - `OnDisconnected` - occurs when the client is disconnected
@@ -171,6 +172,15 @@ LeagueClient class h a few built-in events that you can bind actions to. Those m
 - `OnChampSelectLeave` - occurs when the client exits a champion select
 - `OnGameEnter` - occurs when the client enters a game
 - `OnGameLeave` - occurs when the client exits a game
+
+There are also a few built-in variables that are updated automatically on their events and you can access:
+- `isConnected` bool - defines whether the client is connected
+- `isInLobby` bool - defines whether the client is in a lobby
+- `isInChampSelect` bool -  defines whether the client is in champion select
+- `isInGame` bool - defines whether the client is in a game
+- `localSummoner` Summoner - defines the current summoner
+- `localSummonerRegion` string - defines the region of the current summoner
+- `currentGameflowPhase` string - defines the current gameflow phase *(None, Lobby, ChampSelect, Matchmaking, ReadyCheck, InProgress, PostGame)*
 
 #### Example usage:
 ```cs
