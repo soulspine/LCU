@@ -40,16 +40,9 @@ namespace LCUcore
                 }
             }
 
-            internal static void GetCmdArgs(string? processName, ref Dictionary<string, string>? outputDict)
+            internal static Dictionary<string, string>? GetCmdArgs(string? processName)
             {
-                if ((processName == null) || (!IsRunning(processName)))
-                {
-                    outputDict = null;
-                    return;
-                }
-
-                if (outputDict == null) outputDict = new Dictionary<string, string>();
-                else outputDict.Clear();
+                if ((processName == null) || (!IsRunning(processName))) return null;
 
                 if (!processName.EndsWith(".exe")) processName += ".exe";
 
@@ -68,6 +61,8 @@ namespace LCUcore
                 string argument = "";
                 bool inQuotes = false;
                 bool equalsFound = false;
+
+                Dictionary<string, string> outputDict = new Dictionary<string, string>();
 
                 foreach (char c in output)
                 {
@@ -128,11 +123,22 @@ namespace LCUcore
 
                 // this is here to destroy past outputDict object, specifically when league was launching, it would skyrocket memory usage if this was not here
                 GC.Collect();
+
+                return outputDict;
             }
         }
 
         internal static class Endpoint
         {
+            internal static void CleanUp(ref string endpoint)
+            {
+                while (endpoint[0] == '/') endpoint = endpoint.Substring(1);
+
+                endpoint = '/' + endpoint;
+
+                while (endpoint.EndsWith('/')) endpoint = endpoint.Substring(0, endpoint.Length - 1);
+            }
+
             internal static string GetEventFromEndpoint(string endpoint)
             {
                 if (!endpoint.StartsWith("/")) endpoint = "/" + endpoint;

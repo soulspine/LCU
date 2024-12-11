@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.WebSockets;
 
@@ -10,6 +11,13 @@ namespace LCUcore
         GET, POST, PATCH, DELETE, PUT
     }
 
+    public class SubscriptionMessage
+    {
+        public string Endpoint;
+        public string Type;
+        public JToken Data;
+    }
+
     public class LCU2 : ILCU2
     {
         public bool IsConnected { get; private set; } = false;
@@ -18,6 +26,8 @@ namespace LCUcore
         private string? region = null;
         private string? locale = null;
         private string? token = null;
+
+        private ConcurrentDictionary<string, List<Action<SubscriptionMessage>>> subscriptions = new();
 
         // can be static, no reason to  create different handlers across different instances
         private static readonly HttpClient httpClient = new HttpClient(new HttpClientHandler()
@@ -30,7 +40,6 @@ namespace LCUcore
         private ClientWebSocket? socketConnection = null;
         private CancellationTokenSource? socketCancellationSource = null;
 
-        private Dictionary<string, string>? cmdArgs = null;
         private bool connecting = false;
         private bool disconnecting = false;
         private const string processName = "LeagueClientUx";
@@ -54,7 +63,6 @@ namespace LCUcore
             }
         }
 
-
         /// <summary>
         /// Tries to connect to LCU's API and Websocket once.
         /// If connection is already established (<see cref="IsConnected"/> == true) / process not running / API not ready, it will return immediately.
@@ -68,7 +76,7 @@ namespace LCUcore
             // checking if the process is running
             if (!Utils.Process.IsRunning(processName)) return;
 
-            Utils.Process.GetCmdArgs(processName, ref cmdArgs);
+            Dictionary<string, string> cmdArgs = Utils.Process.GetCmdArgs(processName)!;
 
             if (cmdArgs == null) { connecting = false; return; }
 
@@ -117,7 +125,8 @@ namespace LCUcore
             {
                 socketConnection.ConnectAsync(new Uri($"wss://127.0.0.1:{port}/"), socketCancellationSource.Token).Wait();
                 SocketMessageHandler(); // runs until socket closes
-                SendSubscriptionMessage("OnJsonApiEvent", 5, true); // subscribe to OnJsonApiEvent
+                //SendSubscriptionMessage("OnJsonApiEvent", 5, true); // subscribe to OnJsonApiEvent - all events
+                SendSubscriptionMessage("OnJsonApiEvent_process-control_v1_process", 5, true); // to check if the client is exiting
             }
             catch
             {
@@ -131,10 +140,14 @@ namespace LCUcore
 
             // end of checks, setting IsConnected to true
             IsConnected = true;
+            subscriptions.Clear();
 
             connecting = false;
         }
 
+        /// <summary>
+        /// Disconnects from the API and Websocket. Resets all variables to null and sets <see cref="IsConnected"/> to false.
+        /// </summary>
         public void Disconnect()
         {
             if (!IsConnected || disconnecting) return;
@@ -156,16 +169,47 @@ namespace LCUcore
             region = null;
             locale = null;
             token = null;
+            subscriptions.Clear();
         }
 
-        public void Subscribe(string endpoint)
+        /// <summary>
+        /// Subscribes to an event
+        /// </summary>
+        /// <param name="endpoint"></param>
+        public void Subscribe(string endpoint, Action<SubscriptionMessage> func)
         {
-            SendSubscriptionMessage(endpoint, 5);
+            bool hadActionsBefore = subscriptions.TryGetValue(endpoint, out _);
+
+            Utils.Endpoint.CleanUp(ref endpoint);
+
+            if (subscriptions.TryGetValue(endpoint, out _)) // there are actions binded to this endpoint
+            {
+                //check if the action is already binded and throw an exception if it is
+                if (subscriptions[endpoint].Contains(func)) throw new InvalidOperationException($"This action ({func.Method.Name}) is already binded to this endpoint ({endpoint}).");
+                else subscriptions[endpoint].Add(func); // add it to the list
+            }
+            else // no actions binded to this endpoint
+            {
+                subscriptions.TryAdd(endpoint, new List<Action<SubscriptionMessage>>() { func }); // create a new list with the action
+            }
+
+            if (!hadActionsBefore) SendSubscriptionMessage(endpoint, 5); // subscribe if no actions were binded before
         }
 
-        public void Unsubscribe(string endpoint)
+        public void Unsubscribe(string endpoint, Action<SubscriptionMessage>? func = null)
         {
-            SendSubscriptionMessage(endpoint, 6);
+            Utils.Endpoint.CleanUp(ref endpoint);
+
+            if (func == null) subscriptions.TryRemove(endpoint, out _); // remove all actions if no action specified
+            else if (subscriptions.TryGetValue(endpoint, out List<Action<SubscriptionMessage>>? actions))
+            {
+                actions.Remove(func); // remove specific action
+                if (actions.Count == 0) subscriptions.TryRemove(endpoint, out _); // remove endpoint if no actions binded
+            }
+
+            if (endpoint == "/process-control/v1/process") return; // special case, this has to be subscribed to get notification about exiting the client
+
+            if (subscriptions.TryGetValue(endpoint, out _) == false) SendSubscriptionMessage(endpoint, 6); // unsubscribe if no actions binded
         }
 
         /// <summary>
@@ -196,6 +240,8 @@ namespace LCUcore
                 throw new InvalidOperationException($"Tried sending a subscription message to {endpoint} with opcode {opcode} but there's no connection to API.");
             }
 
+            if (!isEvent) Utils.Endpoint.CleanUp(ref endpoint);
+
             string eventName = isEvent ? endpoint : Utils.Endpoint.GetEventFromEndpoint(endpoint);
 
             byte[] messageBytes = System.Text.Encoding.UTF8.GetBytes($"[{opcode}, \"{eventName}\"]");
@@ -215,7 +261,7 @@ namespace LCUcore
                 {
                     result = await socketConnection.ReceiveAsync(new ArraySegment<byte>(buffer), socketCancellationSource!.Token);
                 }
-                catch (System.Threading.Tasks.TaskCanceledException)
+                catch
                 {
                     return;
                 }
@@ -233,12 +279,38 @@ namespace LCUcore
 
                     JArray arr = JArray.Parse(message);
 
-                    string messageEvent = arr[1].ToString();
+                    if (!arr[1].ToString().StartsWith("OnJsonApiEvent")) continue; // not an event, probably welcome status message
 
-                    if (!messageEvent.StartsWith("OnJsonApiEvent")) continue; // not an event, probably welcome status message
+                    string messageEndpoint = arr[2]["uri"]!.ToString();
 
-                    JToken dataToken = arr[2]["data"]!;
-                    Console.WriteLine(dataToken);
+                    Utils.Endpoint.CleanUp(ref messageEndpoint);
+
+                    string messageType = arr[2]["eventType"]!.ToString();
+                    JToken messageToken = arr[2]["data"]!;
+
+                    // SPECIAL CASE FOR EXITING THE CLIENT
+                    if (messageEndpoint == "/process-control/v1/process"){
+                        if (messageToken["status"]!.ToString() == "Stopping")
+                        {
+                            Disconnect();
+                            return;
+                        }
+                    }
+
+                    if (subscriptions.ContainsKey(messageEndpoint))
+                    {
+                        foreach (var action in subscriptions[messageEndpoint])
+                        {
+
+                            action.Invoke(new SubscriptionMessage
+                            {
+                                Data = messageToken,
+                                Type = messageType,
+                                Endpoint = messageEndpoint
+
+                            });
+                        }
+                    }
 
                 }
             }
@@ -251,12 +323,12 @@ namespace LCUcore
                 throw new InvalidOperationException($"Tried sending a request to {endpoint} but there's no connection to API.");
             }
 
-            if (endpoint.StartsWith("/")) endpoint = endpoint.Substring(1);
+            Utils.Endpoint.CleanUp(ref endpoint);
 
             HttpRequestMessage request = new HttpRequestMessage
             {
                 Method = new HttpMethod(method.ToString()),
-                RequestUri = new Uri($"https://127.0.0.1:{port}/{endpoint}"),
+                RequestUri = new Uri($"https://127.0.0.1:{port}{endpoint}"),
                 Headers =
                     {
                         { HttpRequestHeader.Authorization.ToString(), $"Basic {token}" },
