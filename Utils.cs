@@ -1,14 +1,26 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Net.Http.Headers;
 using System.Net.WebSockets;
 
-namespace LCUcore
+namespace WildRune
 {
+    public enum RequestMethod
+    {
+        GET, POST, PATCH, DELETE, PUT
+    }
+
     internal static class Utils
     {
+        internal static readonly HttpClient insecureHttpClient = new HttpClient(new HttpClientHandler()
+        {
+            ClientCertificateOptions = ClientCertificateOption.Manual,
+            ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => { return true; }
+        });
+
         internal static class Process
         {
             internal static bool IsRunning(string processName)
@@ -141,7 +153,7 @@ namespace LCUcore
 
             internal static string GetEventFromEndpoint(string endpoint)
             {
-                if (!endpoint.StartsWith("/")) endpoint = "/" + endpoint;
+                CleanUp(ref endpoint);
                 return "OnJsonApiEvent" + endpoint.Replace("/", "_");
             }
 
@@ -149,6 +161,23 @@ namespace LCUcore
             {
                 if (!eventName.StartsWith("OnJsonApiEvent")) throw new ArgumentException("Event name must start with 'OnJsonApiEvent'");
                 return eventName.Replace("OnJsonApiEvent", "").Replace("_", "/");
+            }
+        }
+
+        internal static class API
+        {
+            internal static bool ValidateKey(string apiKey)
+            {
+                if (apiKey.Length != 42 || !apiKey.StartsWith("RGAPI")) return false;
+
+                short[] minusPositions = { 5, 14, 19, 24, 29 };
+
+                foreach (short index in minusPositions)
+                {
+                    if (apiKey[index] != '-') return false;
+                }
+
+                return true;
             }
         }
     }

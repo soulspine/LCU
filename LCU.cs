@@ -4,21 +4,9 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.WebSockets;
 
-namespace LCUcore
+namespace WildRune
 {
-    public enum RequestMethod
-    {
-        GET, POST, PATCH, DELETE, PUT
-    }
-
-    public class SubscriptionMessage
-    {
-        public string Endpoint;
-        public string Type;
-        public JToken Data;
-    }
-
-    public class LCU2 : ILCU2
+    public class LCU : ILCU
     {
         public bool IsConnected { get; private set; } = false;
 
@@ -29,14 +17,7 @@ namespace LCUcore
 
         private ConcurrentDictionary<string, List<Action<SubscriptionMessage>>> subscriptions = new();
 
-        // can be static, no reason to  create different handlers across different instances
-        private static readonly HttpClient httpClient = new HttpClient(new HttpClientHandler()
-        {
-            ClientCertificateOptions = ClientCertificateOption.Manual,
-            ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => { return true; }
-        });
-
-        // this cannot be static
+        // http client is in Utils because it's used in both LCU2 and LoL
         private ClientWebSocket? socketConnection = null;
         private CancellationTokenSource? socketCancellationSource = null;
 
@@ -44,7 +25,7 @@ namespace LCUcore
         private bool disconnecting = false;
         private const string processName = "LeagueClientUx";
 
-        public LCU2()
+        public LCU()
         {
 
         }
@@ -302,13 +283,7 @@ namespace LCUcore
                         foreach (var action in subscriptions[messageEndpoint])
                         {
 
-                            action.Invoke(new SubscriptionMessage
-                            {
-                                Data = messageToken,
-                                Type = messageType,
-                                Endpoint = messageEndpoint
-
-                            });
+                            action.Invoke(new SubscriptionMessage(messageEndpoint, messageType, messageToken));
                         }
                     }
 
@@ -343,12 +318,21 @@ namespace LCUcore
 
             try
             {
-                return await httpClient.SendAsync(request);
+                return await Utils.insecureHttpClient.SendAsync(request);
             }
             catch (Exception e)
             {
                 throw new HttpRequestException($"Failed when sending a request to {endpoint}. - {e.Message}");
             }
         }
+
+        public class SubscriptionMessage
+        {
+            public string Endpoint;
+            public string Type;
+            public JToken Data;
+            public SubscriptionMessage(string endpoint, string type, JToken data) { Endpoint = endpoint; Type = type; Data = data; }
+        }
+
     }
 }
