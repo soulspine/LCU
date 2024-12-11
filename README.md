@@ -1,8 +1,11 @@
 # soulspine/LCU
 
+# THIS HAS BEEN ABANDONED AND WILL NOT BE UPDATED ANYMORE
+Check out branch v2 for current version. Everything said down below is still valid for this version. There is no reason to use it though because it forces you to use .NET Framework and it's very messy, whereas v2 works on both Framework and Core.
+
 ## League of Legends Client API handler for C# (.NET Framework 4.8.1)
 
-This class is a wrapper for the League of Legends Client API. It is designed to be used in C# applications that require interaction with the League of Legends client. Works only on Windows. Heavily inspired by [PoniLCU](https://github.com/Ponita0/PoniLCU). If you want to use it, just download the .cs file and include it in your project with `using soulspine.LCU;`. You are free to modify it, but please leave the namespace unchanged and don't remove the first comment linking this page. Thanks!
+This class is a wrapper for the League of Legends Client API. It is designed to be used in C# applications that require interaction with the League of Legends client. Works only on Windows. Heavily inspired by [PoniLCU](https://github.com/Ponita0/PoniLCU). If you want to use it, just download the .cs file and include it in your project with `using soulspine.LCU;`.
 
 ## Requirements
 - .NET Framework 4.8.1 (maybe works on other versions, but I haven't tested it)
