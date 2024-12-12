@@ -1,15 +1,10 @@
 ﻿namespace WildRune
 {
-    public class RiotAPI
+    public static class RiotAPI
     {
-        private string apiKey;
+        private static string apiKey = "";
 
-        public RiotAPI(string apiKey)
-        {
-            this.apiKey = apiKey;
-        }
-
-        public void UpdateApiKey(string newApiKey)
+        public static void SetApiKey(string newApiKey)
         {
             if (!Utils.API.ValidateKey(newApiKey)) throw new ArgumentException("Invalid API key");
             else apiKey = newApiKey;

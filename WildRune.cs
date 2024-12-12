@@ -6,12 +6,10 @@
     public class WildRune
     {
         public readonly LCU Client;
-        public readonly RiotAPI RiotApi;
 
         public WildRune(string apiKey = "")
         {
             Client = new LCU();
-            RiotApi = new RiotAPI(apiKey);
         }
     }
 }
