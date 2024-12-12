@@ -1,72 +1,50 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using WildRune.DTOs.LOL;
+using WildRune.DTOs.LOL.Events;
 
 namespace WildRune
 {
-    public class LOL
+    public static class LOL
     {
         private const int port = 2999;
 
-        public async Task<AllGameDataDTO?> AllGameData()
-        {
-            HttpResponseMessage? response = await Request(RequestMethod.GET, "liveclientdata/allgamedata");
-            if (response == null) return null;
-            return JsonConvert.DeserializeObject<AllGameDataDTO>(await response.Content.ReadAsStringAsync(), new EventConverter());
-        }
+        // GAME DATA
+        public static async Task<AllGameDataDTO?> AllGameData() => await Request<AllGameDataDTO>("liveclientdata/allgamedata");
+        public static async Task<EventContainerDTO?> EventData(int? eventId = null) => await Request<EventContainerDTO>("liveclientdata/eventdata" + ((eventId == null) ? string.Empty : $"?eventId={eventId}"));
 
-        public async Task<ActivePlayerDTO?> ActivePlayer()
-        {
-            HttpResponseMessage? response = await Request(RequestMethod.GET, "liveclientdata/activeplayer");
-            if (response == null) return null;
-            return JsonConvert.DeserializeObject<ActivePlayerDTO>(await response.Content.ReadAsStringAsync());
-        }
+        public static async Task<List<PlayerDTO>?> PlayerList() => await Request<List<PlayerDTO>>("liveclientdata/playerlist");
 
-        public async Task<AbilitiesDTO?> ActivePlayerAbilities()
-        {
-            HttpResponseMessage? response = await Request(RequestMethod.GET, "liveclientdata/activeplayerabilities");
-            if (response == null) return null;
-            return JsonConvert.DeserializeObject<AbilitiesDTO>(await response.Content.ReadAsStringAsync());
-        }
+        // ACTIVE PLAYER
+        public static async Task<ActivePlayerDTO?> ActivePlayer() => await Request<ActivePlayerDTO>("liveclientdata/activeplayer");
 
-        public async Task<string?> ActivePlayerName()
-        {
-            HttpResponseMessage? response = await Request(RequestMethod.GET, "liveclientdata/activeplayername");
-            if (response == null) return "";
-            return await response.Content.ReadAsStringAsync();
-        }
+        public static async Task<AbilitiesDTO?> ActivePlayerAbilities() => await Request<AbilitiesDTO>("liveclientdata/activeplayerabilities");
 
-        public async Task<FullRunesDTO?> ActivePlayerRunes()
-        {
-            HttpResponseMessage? response = await Request(RequestMethod.GET, "liveclientdata/activeplayerrunes");
-            if (response == null) return null;
-            return JsonConvert.DeserializeObject<FullRunesDTO>(await response.Content.ReadAsStringAsync());
-        }
+        public static async Task<string?> ActivePlayerName() => await Request<string>("liveclientdata/activeplayername");
 
-        public async Task<MainRunesDTO?> PlayerMainRunes(string playerName)
-        {
-            HttpResponseMessage? response = await Request(RequestMethod.GET, $"liveclientdata/playermainrunes?riotId={System.Web.HttpUtility.UrlEncode(playerName)}");
-            if (response == null) return null;
-            return JsonConvert.DeserializeObject<MainRunesDTO>(await response.Content.ReadAsStringAsync());
-        }
+        public static async Task<FullRunesDTO?> ActivePlayerRunes() => await Request<FullRunesDTO>("liveclientdata/activeplayerrunes");
 
-        private async Task<HttpResponseMessage?> Request(RequestMethod method, string endpoint)
+        // SPECIFIC PLAYER
+        public static async Task<MainRunesDTO?> PlayerMainRunes(string playerName) => await Request<MainRunesDTO>($"liveclientdata/playermainrunes?riotId={System.Web.HttpUtility.UrlEncode(playerName)}");
+
+        private static async Task<T?> Request<T>(string endpoint)
         {
             Utils.Endpoint.CleanUp(ref endpoint);
 
             HttpRequestMessage request = new HttpRequestMessage()
             {
-                Method = new HttpMethod(method.ToString()),
+                Method = new HttpMethod("GET"),
                 RequestUri = new Uri($"https://127.0.0.1:{port}{endpoint}")
             };
 
             try
             {
-                return await Utils.insecureHttpClient.SendAsync(request);
+                HttpResponseMessage response = await Utils.insecureHttpClient.SendAsync(request);
+                if (response.StatusCode != System.Net.HttpStatusCode.OK) return default;
+                return JsonConvert.DeserializeObject<T>(await response.Content.ReadAsStringAsync(), new EventConverter());
             }
             catch (HttpRequestException)
             {
-                return null;
+                return default;
             }
         }
     }

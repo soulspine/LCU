@@ -1,18 +1,19 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace WildRune.DTOs.LOL
+namespace WildRune.DTOs.LOL.Events
 {
     public abstract class BaseEventDTO
     {
         public int EventID { get; set; }
         public string EventName { get; set; }
+        public float EventTime { get; set; }
 
     }
 
     public class EventConverter : JsonConverter<BaseEventDTO>
     {
-        public override void WriteJson(JsonWriter writer, BaseEventDTO? value, Newtonsoft.Json.JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, BaseEventDTO? value, JsonSerializer serializer)
         {
             JObject jsonObject = JObject.FromObject(value);
             jsonObject.WriteTo(writer);
