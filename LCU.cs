@@ -6,7 +6,7 @@ using System.Net.WebSockets;
 
 namespace WildRune
 {
-    public class LCU : ILCU
+    public class LCU
     {
         public bool IsConnected { get; private set; } = false;
 

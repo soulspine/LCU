@@ -1,6 +1,6 @@
 ﻿namespace WildRune.DTOs.LOL
 {
-    public enum TeamID
+    public enum TeamIDDTO
     {
         ALL, UNKNOWN, ORDER, CHAOS, NEUTRAL
     }

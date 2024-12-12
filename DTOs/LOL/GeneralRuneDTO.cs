@@ -1,10 +1,8 @@
 ﻿namespace WildRune.DTOs.LOL
 {
-    public class GeneralRuneDTO
+    public class GeneralRuneDTO : StatRuneDTO
     {
         public string displayName { get; set; }
-        public int id { get; set; }
-        public string rawDescription { get; set; }
         public string rawDisplayName { get; set; }
     }
 }

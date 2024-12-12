@@ -29,7 +29,7 @@
         public double physicalVamp { get; set; }
         public double resourceMax { get; set; }
         public double resourceRegenRate { get; set; }
-        public AbilityResource resourceType { get; set; }
+        public AbilityResourceDTO resourceType { get; set; }
         public double resourceValue { get; set; }
         public double spellVamp { get; set; }
         public double tenacity { get; set; }

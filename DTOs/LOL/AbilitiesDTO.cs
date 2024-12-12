@@ -2,10 +2,10 @@
 {
     public class AbilitiesDTO
     {
-        public AbilityDTO Q { get; set; }
-        public AbilityDTO W { get; set; }
-        public AbilityDTO E { get; set; }
-        public AbilityDTO R { get; set; }
-        public PassiveDTO Passive { get; set; }
+        public ActiveAbilityDTO Q { get; set; }
+        public ActiveAbilityDTO W { get; set; }
+        public ActiveAbilityDTO E { get; set; }
+        public ActiveAbilityDTO R { get; set; }
+        public PassiveAbilityDTO Passive { get; set; }
     }
 }
