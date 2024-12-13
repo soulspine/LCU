@@ -3,75 +3,121 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.WebSockets;
+using System.Reflection;
 using WildRune.DTOs.LCU;
 
 namespace WildRune
 {
-    public class LCU
+    public static class LCU
     {
         /// <summary>
         /// Represents the connection status to the API and Websocket.
         /// </summary>
-        public bool IsConnected { get; private set; } = false;
+        public static bool IsConnected { get; private set; } = false;
 
         /// <summary>
         /// Represents the current gameflow phase.
         /// </summary>
-        public GameflowPhase CurrentGameflowPhase { get; private set; } = GameflowPhase.None;
+        public static GameflowPhase CurrentGameflowPhase { get; private set; } = GameflowPhase.None;
 
         /// <summary>
         /// Represents the local summoner info.
         /// </summary>
-        public Summoner? LocalSummoner { get; private set; } = null;
+        public static Summoner? LocalSummoner { get; private set; } = null;
 
         /// <summary>
         /// Event invoked when the connection to the API and Websocket is established.
         /// </summary>
-        public event Action? OnConnected = null;
+        public static event Action? OnConnected = null;
 
         /// <summary>
         /// Event invoked when the connection to the API and Websocket is lost.
         /// </summary>
-        public event Action? OnDisconnected = null;
+        public static event Action? OnDisconnected = null;
 
         /// <summary>
         /// Event invoked when the gameflow phase changes.
         /// </summary>
-        public event Action? OnGameflowPhaseChanged = null;
+        public static event Action? OnGameflowPhaseChanged = null;
 
         /// <summary>
         /// Invoked when the local summoner info changes.
         /// </summary>
-        public event Action? OnLocalSummonerInfoChanged = null;
+        public static event Action? OnLocalSummonerInfoChanged = null;
 
-        private int? port = null;
-        private string? region = null;
-        private string? locale = null;
-        private string? token = null;
+        private static int? port = null;
+        private static string? region = null;
+        private static string? locale = null;
+        private static string? token = null;
 
-        private ConcurrentDictionary<string, List<Action<SubscriptionMessage>>> subscriptions = new();
+        private static ConcurrentDictionary<string, List<Action<SubscriptionMessage>>> subscriptions = new();
 
         // http client is in Utils because it's used in both LCU2 and LOL
-        private ClientWebSocket? socketConnection = null;
-        private CancellationTokenSource? socketCancellationSource = null;
+        private static ClientWebSocket? socketConnection = null;
+        private static CancellationTokenSource? socketCancellationSource = null;
 
         //config-ish
         /// <summary>
         /// Whether to keep subscriptions after disconnecting. Defaults to false.
         /// </summary>
-        public bool PreserveSubscriptions { get; set; } = true;
+        public static bool PreserveSubscriptions { get; set; } = true;
 
         /// <summary>
         /// Whether to write all incoming events to console. Defaults to false.
         /// </summary>
-        public bool WriteAllEventsToConsole { get; set; } = false;
+        public static bool WriteAllEventsToConsole { get; set; } = false;
 
-        private bool connecting = false;
-        private bool disconnecting = false;
+        private static bool connecting = false;
+        private static bool disconnecting = false;
         private const string processName = "LeagueClientUx";
 
-        public LCU()
+        static LCU()
         {
+        }
+
+        /// <summary>
+        /// Looks up all methods bound to <see cref="OnConnected"/>, <see cref="OnDisconnected"/>, <see cref="OnGameflowPhaseChanged"/> and <see cref="OnLocalSummonerInfoChanged"/>.
+        /// Also looks up all methods bound to subscribed events coming from the websocket.
+        /// </summary>
+        /// <returns>
+        /// Dictionary with <see cref="string"/> keys being the endpoint or event names and values being a list of <see cref="string"/>s with method's names.
+        /// </returns>
+        public static Dictionary<string, List<string>> GetEventMethods()
+        {
+            Dictionary<string, List<string>> eventMethods = new();
+
+            // methods bound to internal delegates
+            foreach (var eventInfo in typeof(LCU).GetEvents())
+            {
+                Action? eventAction = typeof(LCU).GetField(eventInfo.Name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)!.GetValue(null) as Action;
+
+                var invocations = eventAction?.GetInvocationList();
+
+                List<string> invocationsNames = new List<string>();
+
+                foreach (var invocation in invocations!)
+                {
+                    invocationsNames.Add($"{invocation.Method.DeclaringType!.FullName}.{invocation.Method.Name}");
+                }
+
+                eventMethods.Add(eventInfo.Name, invocationsNames);
+            }
+
+            // methods bound to subscribed events
+            foreach (string endpoint in subscriptions.Keys)
+            {
+                var actions = subscriptions[endpoint];
+
+                List<string> actionsNames = new List<string>();
+
+                foreach (var action in actions)
+                {
+                    actionsNames.Add($"{action.Method.DeclaringType!.FullName}.{action.Method.Name}");
+                }
+
+                eventMethods.Add(endpoint, actionsNames);
+            }
+            return eventMethods;
         }
 
         /// <summary>
@@ -79,7 +125,7 @@ namespace WildRune
         /// Sleeps for <paramref name="sleepTime"/> milliseconds between retries.
         /// </summary>
         /// <param name="sleepTime">Ttime (in milliseconds) to sleep between connection attempts. Defaults to 1000.</param>
-        public void ForceConnect(int sleepTime = 1000)
+        public static void ForceConnect(int sleepTime = 1000)
         {
             while (!IsConnected)
             {
@@ -93,7 +139,7 @@ namespace WildRune
         /// If connection is already established / LCU process not running / API not ready, it will return immediately.
         /// Upon successful connection, it will set <see cref="IsConnected"/> to true.
         /// </summary>
-        public void TryConnect()
+        public static void TryConnect()
         {
             // checking if it's already connecting or connected
             if (connecting || IsConnected) return;
@@ -187,7 +233,7 @@ namespace WildRune
         /// <summary>
         /// Disconnects from the API and Websocket. Resets all variables to null and sets <see cref="IsConnected"/> to false.
         /// </summary>
-        public void Disconnect()
+        public static void Disconnect()
         {
             if (!IsConnected || disconnecting) return;
             disconnecting = true;
@@ -220,7 +266,7 @@ namespace WildRune
         /// </summary>
         /// <param name="endpoint"/>
         /// <param name="func"/>
-        public void Subscribe(string endpoint, Action<SubscriptionMessage> func)
+        public static void Subscribe(string endpoint, Action<SubscriptionMessage> func)
         {
             bool hadActionsBefore = subscriptions.TryGetValue(endpoint, out _);
 
@@ -245,7 +291,7 @@ namespace WildRune
         /// </summary>
         /// <param name="endpoint"></param>
         /// <param name="func"></param>
-        public void Unsubscribe(string endpoint, Action<SubscriptionMessage>? func = null)
+        public static void Unsubscribe(string endpoint, Action<SubscriptionMessage>? func = null)
         {
             Utils.Endpoint.CleanUp(ref endpoint);
 
@@ -263,7 +309,7 @@ namespace WildRune
         /// <param name="endpoint"></param>
         /// <param name="opcode"></param>
         /// <param name="isEvent"></param>
-        private void SendSubscriptionMessage(string endpoint, int opcode, bool isEvent = false)
+        private static void SendSubscriptionMessage(string endpoint, int opcode, bool isEvent = false)
         {
             Task.Run(async () => await SendSubscriptionMessageAsync(endpoint, opcode, isEvent));
         }
@@ -278,7 +324,7 @@ namespace WildRune
         /// <param name="isEvent"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        private async Task SendSubscriptionMessageAsync(string endpoint, int opcode, bool isEvent = false)
+        private static async Task SendSubscriptionMessageAsync(string endpoint, int opcode, bool isEvent = false)
         {
             if (!IsConnected || socketConnection == null)
             {
@@ -298,7 +344,7 @@ namespace WildRune
         /// Loop listening for messages and invoking actions binded to specific endpoints.
         /// Do not invoke anywhere else than after initializing the socket, only one of them should be running at a time.
         /// </summary>
-        private async void SocketMessageHandler()
+        private static async void SocketMessageHandler()
         {
             var buffer = new byte[1024];
             System.Text.StringBuilder messageBuffer = new System.Text.StringBuilder();
@@ -385,7 +431,7 @@ namespace WildRune
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="HttpRequestException"></exception>
-        public async Task<HttpResponseMessage> Request(RequestMethod method, string endpoint, dynamic? data = null, bool ignoreReady = false)
+        public static async Task<HttpResponseMessage> Request(RequestMethod method, string endpoint, dynamic? data = null, bool ignoreReady = false)
         {
             if (!IsConnected && !ignoreReady)
             {
