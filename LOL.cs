@@ -9,22 +9,22 @@ namespace WildRune
         private const int port = 2999;
 
         // GAME DATA
-        public static async Task<AllGameDataDTO?> AllGameData() => await Request<AllGameDataDTO>("liveclientdata/allgamedata");
-        public static async Task<EventContainerDTO?> EventData(int? eventId = null) => await Request<EventContainerDTO>("liveclientdata/eventdata" + ((eventId == null) ? string.Empty : $"?eventId={eventId}"));
-        public static async Task<GameDataDTO?> GameStats() => await Request<GameDataDTO>("liveclientdata/gamestats");
-        public static async Task<List<PlayerDTO>?> PlayerList() => await Request<List<PlayerDTO>>("liveclientdata/playerlist");
+        public static async Task<AllGameData?> AllGameData() => await Request<AllGameData>("liveclientdata/allgamedata");
+        public static async Task<EventContainer?> EventData(int? eventId = null) => await Request<EventContainer>("liveclientdata/eventdata" + ((eventId == null) ? string.Empty : $"?eventId={eventId}"));
+        public static async Task<GameData?> GameStats() => await Request<GameData>("liveclientdata/gamestats");
+        public static async Task<List<Player>?> PlayerList() => await Request<List<Player>>("liveclientdata/playerlist");
 
         // ACTIVE PLAYER
-        public static async Task<ActivePlayerDTO?> ActivePlayer() => await Request<ActivePlayerDTO>("liveclientdata/activeplayer");
-        public static async Task<AbilitiesDTO?> ActivePlayerAbilities() => await Request<AbilitiesDTO>("liveclientdata/activeplayerabilities");
+        public static async Task<ActivePlayer?> ActivePlayer() => await Request<ActivePlayer>("liveclientdata/activeplayer");
+        public static async Task<Abilities?> ActivePlayerAbilities() => await Request<Abilities>("liveclientdata/activeplayerabilities");
         public static async Task<string?> ActivePlayerName() => await Request<string>("liveclientdata/activeplayername");
-        public static async Task<FullRunesDTO?> ActivePlayerRunes() => await Request<FullRunesDTO>("liveclientdata/activeplayerrunes");
+        public static async Task<FullRunes?> ActivePlayerRunes() => await Request<FullRunes>("liveclientdata/activeplayerrunes");
 
         // SPECIFIC PLAYER
-        public static async Task<MainRunesDTO?> PlayerMainRunes(string playerName) => await Request<MainRunesDTO>($"liveclientdata/playermainrunes?riotId={System.Web.HttpUtility.UrlEncode(playerName)}");
-        public static async Task<List<ItemDTO>?> PlayerItems(string playerName) => await Request<List<ItemDTO>>($"liveclientdata/playeritems?riotId={System.Web.HttpUtility.UrlEncode(playerName)}");
-        public static async Task<ScoresDTO?> PlayerScores(string playerName) => await Request<ScoresDTO>($"liveclientdata/playerscores?riotId={System.Web.HttpUtility.UrlEncode(playerName)}");
-        public static async Task<SummonerSpellsContainerDTO?> PlayerSummonerSpells(string playerName) => await Request<SummonerSpellsContainerDTO>($"liveclientdata/playersummonerspells?riotId={System.Web.HttpUtility.UrlEncode(playerName)}");
+        public static async Task<MainRunes?> PlayerMainRunes(string playerName) => await Request<MainRunes>($"liveclientdata/playermainrunes?riotId={System.Web.HttpUtility.UrlEncode(playerName)}");
+        public static async Task<List<Item>?> PlayerItems(string playerName) => await Request<List<Item>>($"liveclientdata/playeritems?riotId={System.Web.HttpUtility.UrlEncode(playerName)}");
+        public static async Task<Scores?> PlayerScores(string playerName) => await Request<Scores>($"liveclientdata/playerscores?riotId={System.Web.HttpUtility.UrlEncode(playerName)}");
+        public static async Task<SummonerSpellsContainer?> PlayerSummonerSpells(string playerName) => await Request<SummonerSpellsContainer>($"liveclientdata/playersummonerspells?riotId={System.Web.HttpUtility.UrlEncode(playerName)}");
 
         private static async Task<T?> Request<T>(string endpoint)
         {

@@ -3,12 +3,46 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.WebSockets;
+using WildRune.DTOs.LCU;
 
 namespace WildRune
 {
     public class LCU
     {
+        /// <summary>
+        /// Represents the connection status to the API and Websocket.
+        /// </summary>
         public bool IsConnected { get; private set; } = false;
+
+        /// <summary>
+        /// Represents the current gameflow phase.
+        /// </summary>
+        public GameflowPhase CurrentGameflowPhase { get; private set; } = GameflowPhase.None;
+
+        /// <summary>
+        /// Represents the local summoner info.
+        /// </summary>
+        public Summoner? LocalSummoner { get; private set; } = null;
+
+        /// <summary>
+        /// Event invoked when the connection to the API and Websocket is established.
+        /// </summary>
+        public event Action? OnConnected = null;
+
+        /// <summary>
+        /// Event invoked when the connection to the API and Websocket is lost.
+        /// </summary>
+        public event Action? OnDisconnected = null;
+
+        /// <summary>
+        /// Event invoked when the gameflow phase changes.
+        /// </summary>
+        public event Action? OnGameflowPhaseChanged = null;
+
+        /// <summary>
+        /// Invoked when the local summoner info changes.
+        /// </summary>
+        public event Action? OnLocalSummonerInfoChanged = null;
 
         private int? port = null;
         private string? region = null;
@@ -17,9 +51,20 @@ namespace WildRune
 
         private ConcurrentDictionary<string, List<Action<SubscriptionMessage>>> subscriptions = new();
 
-        // http client is in Utils because it's used in both LCU2 and LoL
+        // http client is in Utils because it's used in both LCU2 and LOL
         private ClientWebSocket? socketConnection = null;
         private CancellationTokenSource? socketCancellationSource = null;
+
+        //config-ish
+        /// <summary>
+        /// Whether to keep subscriptions after disconnecting. Defaults to false.
+        /// </summary>
+        public bool preserveSubscriptions { get; set; } = true;
+
+        /// <summary>
+        /// Whether to write all incoming events to console. Defaults to false.
+        /// </summary>
+        public bool writeAllEventsToConsole { get; set; } = false;
 
         private bool connecting = false;
         private bool disconnecting = false;
@@ -27,7 +72,6 @@ namespace WildRune
 
         public LCU()
         {
-
         }
 
         /// <summary>
@@ -46,7 +90,7 @@ namespace WildRune
 
         /// <summary>
         /// Tries to connect to LCU's API and Websocket once.
-        /// If connection is already established (<see cref="IsConnected"/> == true) / process not running / API not ready, it will return immediately.
+        /// If connection is already established / LCU process not running / API not ready, it will return immediately.
         /// Upon successful connection, it will set <see cref="IsConnected"/> to true.
         /// </summary>
         public void TryConnect()
@@ -91,6 +135,21 @@ namespace WildRune
                 return;
             }
 
+            // cheking what is the current gameflow phase and setting it
+            var gameflowStateRequest = Request(RequestMethod.GET, "/lol-gameflow/v1/gameflow-phase", ignoreReady: true).Result;
+            if (Enum.TryParse(gameflowStateRequest.Content.ReadAsStringAsync().Result.Replace("\"", ""), true, out GameflowPhase result))
+            {
+                CurrentGameflowPhase = result;
+            }
+            else return;
+
+            // getting local summoner data
+            var summonerRequest = Request(RequestMethod.GET, "/lol-summoner/v1/current-summoner", ignoreReady: true).Result;
+            if (summonerRequest.IsSuccessStatusCode)
+            {
+                LocalSummoner = JsonConvert.DeserializeObject<Summoner>(summonerRequest.Content.ReadAsStringAsync().Result);
+            }
+            else return;
 
             // creating a socket and connecting to it
             if (socketConnection != null) socketConnection.Dispose();
@@ -106,8 +165,7 @@ namespace WildRune
             {
                 socketConnection.ConnectAsync(new Uri($"wss://127.0.0.1:{port}/"), socketCancellationSource.Token).Wait();
                 SocketMessageHandler(); // runs until socket closes
-                //SendSubscriptionMessage("OnJsonApiEvent", 5, true); // subscribe to OnJsonApiEvent - all events
-                SendSubscriptionMessage("OnJsonApiEvent_process-control_v1_process", 5, true); // to check if the client is exiting
+                SendSubscriptionMessage("OnJsonApiEvent", 5, true); // subscribe to OnJsonApiEvent - all events
             }
             catch
             {
@@ -121,9 +179,9 @@ namespace WildRune
 
             // end of checks, setting IsConnected to true
             IsConnected = true;
-            subscriptions.Clear();
 
             connecting = false;
+            OnConnected?.Invoke();
         }
 
         /// <summary>
@@ -150,13 +208,18 @@ namespace WildRune
             region = null;
             locale = null;
             token = null;
-            subscriptions.Clear();
+            CurrentGameflowPhase = GameflowPhase.None;
+            LocalSummoner = null;
+            if (!preserveSubscriptions) subscriptions.Clear();
+
+            OnDisconnected?.Invoke();
         }
 
         /// <summary>
-        /// Subscribes to an event
+        /// Subscribes to an event that will come from <paramref name="endpoint"/>. When the event is received, it will invoke the action passed as <paramref name="func"/>.
         /// </summary>
-        /// <param name="endpoint"></param>
+        /// <param name="endpoint"/>
+        /// <param name="func"/>
         public void Subscribe(string endpoint, Action<SubscriptionMessage> func)
         {
             bool hadActionsBefore = subscriptions.TryGetValue(endpoint, out _);
@@ -173,10 +236,15 @@ namespace WildRune
             {
                 subscriptions.TryAdd(endpoint, new List<Action<SubscriptionMessage>>() { func }); // create a new list with the action
             }
-
-            if (!hadActionsBefore) SendSubscriptionMessage(endpoint, 5); // subscribe if no actions were binded before
         }
 
+        /// <summary>
+        /// Unsubscribes from an event that comes from <paramref name="endpoint"/>.
+        /// If <paramref name="func"/> is passed, it will only remove that specific action.
+        /// Otherwise, it will remove all actions binded to that endpoint.
+        /// </summary>
+        /// <param name="endpoint"></param>
+        /// <param name="func"></param>
         public void Unsubscribe(string endpoint, Action<SubscriptionMessage>? func = null)
         {
             Utils.Endpoint.CleanUp(ref endpoint);
@@ -187,10 +255,6 @@ namespace WildRune
                 actions.Remove(func); // remove specific action
                 if (actions.Count == 0) subscriptions.TryRemove(endpoint, out _); // remove endpoint if no actions binded
             }
-
-            if (endpoint == "/process-control/v1/process") return; // special case, this has to be subscribed to get notification about exiting the client
-
-            if (subscriptions.TryGetValue(endpoint, out _) == false) SendSubscriptionMessage(endpoint, 6); // unsubscribe if no actions binded
         }
 
         /// <summary>
@@ -230,6 +294,10 @@ namespace WildRune
             await socketConnection.SendAsync(new ArraySegment<byte>(messageBytes), WebSocketMessageType.Text, true, CancellationToken.None);
         }
 
+        /// <summary>
+        /// Loop listening for messages and invoking actions binded to specific endpoints.
+        /// Do not invoke anywhere else than after initializing the socket, only one of them should be running at a time.
+        /// </summary>
         private async void SocketMessageHandler()
         {
             var buffer = new byte[1024];
@@ -258,6 +326,8 @@ namespace WildRune
                     string message = messageBuffer.ToString();
                     messageBuffer.Clear();
 
+                    if (writeAllEventsToConsole) Console.WriteLine(message);
+
                     JArray arr = JArray.Parse(message);
 
                     if (!arr[1].ToString().StartsWith("OnJsonApiEvent")) continue; // not an event, probably welcome status message
@@ -277,6 +347,18 @@ namespace WildRune
                             return;
                         }
                     }
+                    // SPECIAL CASE FOR GAMEFLOW PHASE
+                    else if (messageEndpoint == "/lol-gameflow/v1/gameflow-phase")
+                    {
+                        CurrentGameflowPhase = (GameflowPhase)Enum.Parse(typeof(GameflowPhase), messageToken.ToString());
+                        OnGameflowPhaseChanged?.Invoke();
+                    }
+                    // SPECIAL CASE FOR LOCAL SUMMONER
+                    else if (messageEndpoint == "/lol-summoner/v1/current-summoner")
+                    {
+                        LocalSummoner = JsonConvert.DeserializeObject<Summoner>(messageToken.ToString());
+                        OnLocalSummonerInfoChanged?.Invoke();
+                    }
 
                     if (subscriptions.ContainsKey(messageEndpoint))
                     {
@@ -291,7 +373,19 @@ namespace WildRune
             }
         }
 
-        public async Task<HttpResponseMessage> Request(RequestMethod method, string endpoint, JObject? data = null, bool ignoreReady = false)
+        /// <summary>
+        /// Sends a request to the API. If <paramref name="data"/> is passed, it will get serialized automatically. It will throw an <see cref="InvalidOperationException"/> if you try to make a request before properly connecting.
+        /// You can disable the check for connection by setting <paramref name="ignoreReady"/> to true.
+        /// When the request fails unexpectedly, it will throw an <see cref="HttpRequestException"/>.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="endpoint"></param>
+        /// <param name="data"></param>
+        /// <param name="ignoreReady"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="HttpRequestException"></exception>
+        public async Task<HttpResponseMessage> Request(RequestMethod method, string endpoint, dynamic? data = null, bool ignoreReady = false)
         {
             if (!IsConnected && !ignoreReady)
             {
@@ -326,6 +420,9 @@ namespace WildRune
             }
         }
 
+        /// <summary>
+        /// Class representing a message received from the websocket. All methods binded to an endpoint will receive this object.
+        /// </summary>
         public class SubscriptionMessage
         {
             public string Endpoint;

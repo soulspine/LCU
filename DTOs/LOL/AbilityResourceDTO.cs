@@ -1,7 +1,0 @@
-﻿namespace WildRune.DTOs.LOL
-{
-    public enum AbilityResourceDTO
-    {
-        MANA, ENERGY, NONE, SHIELD, BATTLEFURY, DRAGONFURY, RAGE, HEAT, GNARFURY, FEROCITY, BLOODWELL, WIND, AMMO, MOONLIGHT, OTHER, MAX
-    }
-}
