@@ -59,12 +59,12 @@ namespace WildRune
         /// <summary>
         /// Whether to keep subscriptions after disconnecting. Defaults to false.
         /// </summary>
-        public bool preserveSubscriptions { get; set; } = true;
+        public bool PreserveSubscriptions { get; set; } = true;
 
         /// <summary>
         /// Whether to write all incoming events to console. Defaults to false.
         /// </summary>
-        public bool writeAllEventsToConsole { get; set; } = false;
+        public bool WriteAllEventsToConsole { get; set; } = false;
 
         private bool connecting = false;
         private bool disconnecting = false;
@@ -210,7 +210,7 @@ namespace WildRune
             token = null;
             CurrentGameflowPhase = GameflowPhase.None;
             LocalSummoner = null;
-            if (!preserveSubscriptions) subscriptions.Clear();
+            if (!PreserveSubscriptions) subscriptions.Clear();
 
             OnDisconnected?.Invoke();
         }
@@ -326,7 +326,7 @@ namespace WildRune
                     string message = messageBuffer.ToString();
                     messageBuffer.Clear();
 
-                    if (writeAllEventsToConsole) Console.WriteLine(message);
+                    if (WriteAllEventsToConsole) Console.WriteLine(message);
 
                     JArray arr = JArray.Parse(message);
 
