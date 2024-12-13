@@ -2,6 +2,6 @@
 {
     public enum GameflowPhase
     {
-        None, Lobby, Matchmaking, ReadyCheck, ChampSelect, InProgress, PreEndOfGame, EndOfGame
+        None, Lobby, Matchmaking, ReadyCheck, ChampSelect, GameStart, InProgress, TerminatedInError, WaitingForStats, PreEndOfGame, EndOfGame
     }
 }
