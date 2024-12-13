@@ -82,7 +82,7 @@ namespace WildRune
         /// <returns>
         /// Dictionary with <see cref="string"/> keys being the endpoint or event names and values being a list of <see cref="string"/>s with method's names.
         /// </returns>
-        public static Dictionary<string, List<string>> GetEventMethods()
+        public static Dictionary<string, List<string>> GetMethodNamesForEvents()
         {
             Dictionary<string, List<string>> eventMethods = new();
 
