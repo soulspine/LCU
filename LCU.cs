@@ -392,8 +392,7 @@ namespace WildRune
 
                     if (!arr[1].ToString().StartsWith("OnJsonApiEvent")) continue; // not an event, probably welcome status message
 
-                    string messageEndpoint = arr[2]["uri"]!.ToString();
-
+                    string messageEndpoint = System.Web.HttpUtility.UrlDecode(arr[2]["uri"]!.ToString());
                     Utils.Endpoint.CleanUp(ref messageEndpoint);
 
                     string messageType = arr[2]["eventType"]!.ToString();
