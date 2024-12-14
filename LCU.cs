@@ -419,6 +419,17 @@ namespace WildRune
                         OnLocalSummonerInfoChanged?.Invoke();
                     }
 
+                    foreach (var key in subscriptions.Keys)
+                    {
+                        if (messageEndpoint.StartsWith(key))
+                        {
+                            foreach (var action in subscriptions[key])
+                            {
+                                action.Invoke(new SubscriptionMessage(messageEndpoint, messageType, messageToken));
+                            }
+                        }
+                    }
+
                     if (subscriptions.ContainsKey(messageEndpoint))
                     {
                         foreach (var action in subscriptions[messageEndpoint])
