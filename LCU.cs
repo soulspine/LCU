@@ -18,7 +18,7 @@ namespace WildRune
         /// <summary>
         /// Represents the current gameflow phase.
         /// </summary>
-        public static GameflowPhase CurrentGameflowPhase { get; private set; } = GameflowPhase.None;
+        public static GameflowPhase? CurrentGameflowPhase { get; private set; } = null;
 
         /// <summary>
         /// Represents the local summoner info.
@@ -125,12 +125,12 @@ namespace WildRune
         /// Sleeps for <paramref name="sleepTime"/> milliseconds between retries.
         /// </summary>
         /// <param name="sleepTime">Ttime (in milliseconds) to sleep between connection attempts. Defaults to 1000.</param>
-        public static void ForceConnect(int sleepTime = 1000)
+        public static void ForceConnect(uint sleepTime = 1000)
         {
             while (!IsConnected)
             {
                 TryConnect();
-                Thread.Sleep(sleepTime);
+                Thread.Sleep(Convert.ToInt32(sleepTime));
             }
         }
 
@@ -254,7 +254,7 @@ namespace WildRune
             region = null;
             locale = null;
             token = null;
-            CurrentGameflowPhase = GameflowPhase.None;
+            CurrentGameflowPhase = null;
             LocalSummoner = null;
             if (!PreserveSubscriptions) subscriptions.Clear();
 

@@ -1,12 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
-using System.ComponentModel.Design;
-using System.Diagnostics;
-using System.Linq.Expressions;
-using System.Net.Http.Headers;
-using System.Net.WebSockets;
-
-namespace WildRune
+﻿namespace WildRune
 {
     public enum RequestMethod
     {
@@ -64,7 +56,7 @@ namespace WildRune
                 p.StartInfo.Arguments = "/c " + command;
                 p.StartInfo.RedirectStandardError = true;
                 p.StartInfo.RedirectStandardOutput = true;
-                p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                p.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
                 p.StartInfo.UseShellExecute = false;
                 p.Start();
                 string output = p.StandardOutput.ReadToEnd();
