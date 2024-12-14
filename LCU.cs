@@ -26,6 +26,11 @@ namespace WildRune
         public static Summoner? LocalSummoner { get; private set; } = null;
 
         /// <summary>
+        /// Represents the local summoner's region.
+        /// </summary>
+        public static string? LocalSummonerRegion { get; private set; } = null;
+
+        /// <summary>
         /// Event invoked when the connection to the API and Websocket is established.
         /// </summary>
         public static event Action? OnConnected = null;
@@ -197,6 +202,14 @@ namespace WildRune
             }
             else return;
 
+            // getting local summoner region
+            var regionRequest = Request(RequestMethod.GET, "/riotclient/region-locale", ignoreReady: true).Result;
+            if (regionRequest.IsSuccessStatusCode)
+            {
+                LocalSummonerRegion = JObject.Parse(regionRequest.Content.ReadAsStringAsync().Result).GetValue("region")!.ToString();
+            }
+            else return;
+
             // creating a socket and connecting to it
             if (socketConnection != null) socketConnection.Dispose();
             if (socketCancellationSource != null) socketCancellationSource.Dispose();
@@ -256,6 +269,7 @@ namespace WildRune
             token = null;
             CurrentGameflowPhase = null;
             LocalSummoner = null;
+            LocalSummonerRegion = null;
             if (!PreserveSubscriptions) subscriptions.Clear();
 
             OnDisconnected?.Invoke();
