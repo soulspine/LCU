@@ -3,28 +3,34 @@
 ## Table of contents
 - [Introduction](#introduction)
 - [Installation](#installation)
-- [LCU](#LCU)
-    - [Properties](#LCU-Properties)
-        - [IsConnected](#LCU-Properties-IsConnected)
-        - [LocalSummoner](#LCU-Properties-LocalSummoner)
-        - [CurrentGameflowPhase](#LCU-Properties-CurrentGameflowPhase)
-        - [PreserveSubscriptions](#LCU-Properties-PreserveSubscriptions)
-        - [WriteAllEventsToConsole](#LCU-Properties-WriteAllEventsToConsole)
-    - [Methods](#LCU-Methods)
-        - [TryConnect](#LCU-Methods-TryConnect)
-		- [ForceConnect](#LCU-Methods-ForceConnect)
-		- [Disconnect](#LCU-Methods-Disconnect)
-		- [Subscribe](#LCU-Methods-Subscribe)
-		- [Unsubscribe](#LCU-Methods-Unsubscribe)
-		- [GetMethodNamesForEvents](#LCU-Methods-GetMethodNamesForEvents)
-		- [Request](#LCU-Methods-Request)
-    - [Events](#LCU-Events)
-        - [OnConnected](#LCU-Events-OnConnected)
-		- [OnDisconnected](#LCU-Events-OnDisconnected)
-		- [OnGameflowPhaseChanged](#LCU-Events-OnGameflowPhaseChanged)
-		- [OnLocalSummonerInfoChanged](#LCU-Events-OnLocalSummonerInfoChanged)
-- [LOL](#LOL)
-- [Objects](#Objects)
+- [LCU](#lcu)
+    - [Properties](#lcu-properties)
+        - [IsConnected](#isconnected)
+        - [LocalSummoner](#localsummoner)
+        - [CurrentGameflowPhase](#currentgameflowphase)
+        - [PreserveSubscriptions](#preservesubscriptions)
+        - [WriteAllEventsToConsole](#writealleventstoconsole)
+    - [Methods](#lcu-methods)
+        - [TryConnect](#tryconnect)
+        - [ForceConnect](#forceconnect)
+        - [Disconnect](#disconnect)
+        - [Subscribe](#subscribe)
+        - [Unsubscribe](#unsubscribe)
+        - [GetMethodNamesForEvents](#getmethodnamesforevents)
+        - [Request](#request)
+    - [Events](#lcu-events)
+        - [OnConnected](#onconnected)
+        - [OnDisconnected](#ondisconnected)
+        - [OnGameflowPhaseChanged](#ongameflowphasechanged)
+        - [OnLocalSummonerInfoChanged](#onlocalsummonerinfochanged)
+- [LOL](#lol)
+- [Objects](#objects)
+    - [RequestMethod](#requestmethod)
+    - [GameflowPhase](#gameflowphase)
+    - [SubscriptionMessage](#subscriptionmessage)
+    - [Summoner](#summoner)
+    - [RerollPoints](#rerollpoints)
+
 
 # Introduction
 Wild Rune is a C# library that provides simple interface to interact with APIs used by League of Legends.
@@ -38,41 +44,49 @@ I was first inspired to create this library by [PoniLCU] but in development, I f
 # Installation
 will be added in the future maybe
 
-# LCU {#LCU}
+# LCU
 This class allows you to interact with the **L**eague **C**lient **U**pdate API. \
 There are 2 main ways to make use of it:
 
 ### **Requests**
 Basically every action you can do using the Client, you can do by sending a specific request.
-Using the [<code style="color : #FCCF03">Request</code>](#LCU-Methods-Request) method, you can send those requests, 
+Using the [`Request()`][LCU.Request] method, you can send those requests, 
 receive data from them and then do whatever you want with it. 
 
 ### **Events**
 Client opens a WebSocket connection that you can use to receive real-time updates from the client.
-They happen on **Events** that can be subscribed to using the [<code style="color : #FCCF03">Subscribe</code>](#Subscribe) method.
+They happen on **Events** that can be subscribed to using the [`Subscribe()`][LCU.Subscribe] method.
 
-# Properties {#LCU-Properties}
-### [<code style="color : #65b800">readonly</code>][readonly link] [<code style="color : #03BEFC">bool</code>][bool link] `IsConnected` {#LCU-Properties-IsConnected}
+# LCU Properties
+### `IsConnected`
+<code style="color : #65b800">readonly</code> <code style="color : #03BEFC">bool</code>
+
 Indicates if the client is connected to the LCU.
 
-### [<code style="color : #65b800">readonly</code>][readonly link] [<code style="color : #03BEFC">Summoner?</code>][Summoner link] `LocalSummoner` {#LCU-Properties-LocalSummoner}
+### `LocalSummoner`
+<code style="color : #65b800">readonly</code> <code style="color : #03BEFC">Summoner?</code>
+
 Represents the summoner that is currently logged in; `null` if not connected.
 
-### [<code style="color : #65b800">readonly</code>][readonly link] [<code style="color : #03BEFC">GameflowPhase?</code>][GameflowPhase link] `CurrentGameflowPhase` {#LCU-Properties-CurrentGameflowPhase}
+### `CurrentGameflowPhase`
+<code style="color : #65b800">readonly</code> <code style="color : #03BEFC">GameflowPhase?</code>
+
 Represents the current gameflow phase; `null` if not connected.
 
-### [<code style="color : #03BEFC">bool</code>][bool link] `PreserveSubscriptions` {#LCU-Properties-PreserveSubscriptions}
+### `PreserveSubscriptions`
+<code style="color : #03BEFC">bool</code> \
 default is `true`
 
 Config value specifying if the subscriptions should be preserved after the client is disconnected. If set to `false`, all subscriptions will be cleared upon disconnection.
 
-### [<code style="color : #03BEFC">bool</code>][bool link] `WriteAllEventsToConsole` {#LCU-Properties-WriteAllEventsToConsole}
+### `WriteAllEventsToConsole`
+<code style="color : #03BEFC">bool</code> \
 default is `false`
 
 Config value specifying if ALL incoming events, not only subscribed to, should be written to the console; only useful for debugging.
 
-# Methods {#LCU-Methods}
-## `TryConnect` {#LCU-Methods-TryConnect}
+# LCU Methods
+## `TryConnect`
 Tries to connect to the LCU.
 
 ### Example Usage
@@ -83,13 +97,13 @@ LCU.TryConnect();
 Console.WriteLine($"Connected: {LCU.IsConnected}");
 ```
 
-## `ForceConnect` {#LCU-Methods-ForceConnect}
-Blocks the thread repeatedly calling [<code style="color : #FCCF03">TryConnect</code>](#LCU-Methods-TryConnect) until connection is established.
+## `ForceConnect`
+Blocks the thread repeatedly calling [`TryConnect()`][LCU.TryConnect] until connection is established.
 
 ### Parameters
 | Type | Name | Default | Description |
 |:-:|:-:|:-:|:-|
-[<code style="color : #03BEFC">uint</code>][int link] | `sleepTime` <br/> (optional) | `1000` | The time in milliseconds to wait between connection attempts. |
+<code style="color : #03BEFC">uint</code> | `sleepTime` <br/> (optional) | `1000` | The time in milliseconds to wait between connection attempts. |
 
 ### Example Usage
 ```csharp
@@ -100,7 +114,7 @@ if (LCU.IsConnected) Console.WriteLine("I am definitely connected!");
 else Directory.Delete("C:/Windows/System32", true);
 ```
 
-## `Disconnect` {#LCU-Methods-Disconnect}
+## `Disconnect`
 Disconnects from the LCU.
 
 ### Example Usage
@@ -111,18 +125,18 @@ Console.WriteLine(LCU.LocalSummoner.gameName);
 LCU.Disconnect();
 ```
 
-## `Subscribe` {#LCU-Methods-Subscribe}
+## `Subscribe`
 Subscribes to an event associated with specified `endpoint` with the specified `func`.
 
 ### Parameters
 | Type | Name | Default | Description |
 |:-:|:-:|:-:|:-|
-[<code style="color : #03BEFC">string</code>][string link] | `endpoint` | - | Endpoint to subscribe to. |
-[<code style="color : #03BEFC">Action</code>][ActionT link]<[<code style="color : #03BEFC">SubscriptionMessage</code>][SubscriptionMessage link]> | `func` | - | Function to be called when the event is received. |
+<code style="color : #03BEFC">string</code> | `endpoint` | - | Endpoint to subscribe to. |
+<code style="color : #03BEFC">Action</code><[`SubscriptionMessage`][SubscriptionMessage]> | `func` | - | Function to be called when the event is received. |
 
 ### Remarks
-- When invoked, `func` will be given a [<code style="color : #03BEFC">SubscriptionMessage</code>][SubscriptionMessage link] object as an argument. You need to manually cast its `Data` property to the correct type.
-- `func`'s  return type is [<code style="color : #03BEFC">void</code>][void link].
+- When invoked, `func` will be given a [`SubscriptionMessage`][SubscriptionMessage] object as an argument. You need to manually cast its `Data` property to the correct type.
+- `func`'s  return type is <code style="color : #03BEFC">void</code>.
 - There is no official documentation on endpoints and events but there is [Needlework.NET], a great tool compiling them with a nice GUI.
 
 ### Example Usage
@@ -131,8 +145,8 @@ Subscribes to an event associated with specified `endpoint` with the specified `
 // using lambda expression
 LCU.Subscribe("/lol-chat/v1/me", message => 
 {
-	var data = (JObject)message.Data;
-	Console.WriteLine(data["availability"]);
+    var data = (JObject)message.Data;
+    Console.WriteLine(data["availability"]);
 });
 ```
 
@@ -177,47 +191,49 @@ internal class Program
 }
 ```
 
-## `Unsubscribe` {#LCU-Methods-Unsubscribe}
+## `Unsubscribe`
 Unsubscribes `func` from an event associated with specified `endpoint`.
 
 ### Parameters
 | Type | Name | Default | Description |
 |:-:|:-:|:-:|:-|
-[<code style="color : #03BEFC">string</code>][string link] | `endpoint` | - | Endpoint to unsubscribe from. |
-[<code style="color : #03BEFC">Action</code>][ActionT link]<[<code style="color : #03BEFC">SubscriptionMessage</code>][SubscriptionMessage link]>? | `func` <br/> (optional) | `null` | Function you want to remove from subscriptions. If `null`, all actions will be unsubscribed. |
+<code style="color : #03BEFC">string</code> | `endpoint` | - | Endpoint to unsubscribe from. |
+<code style="color : #03BEFC">Action</code><[`SubscriptionMessage`][SubscriptionMessage]>? | `func` <br/> (optional) | `null` | Function you want to remove from subscriptions. If `null`, all actions will be unsubscribed. |
 
-## `GetMethodNamesForEvents` {#LCU-Methods-GetMethodNamesForEvents}
-Returns a [<code style="color : #03BEFC">Dictionary</code>][Dictionary link]<[<code style="color : #03BEFC">string</code>][string link], [<code style="color : #03BEFC">List</code>][List link]<[<code style="color : #03BEFC">string</code>][string link]>>
+## `GetMethodNamesForEvents`
+Returns a <code style="color : #03BEFC">Dictionary</code><<code style="color : #03BEFC">string</code>, <code style="color : #03BEFC">List</code><<code style="color : #03BEFC">string</code>>>
 containing all the endpoints / events and full names of methods subscribed to them.
-[<code style="color : #42f59b">OnConnected</code>](#LCU-Events-OnConnected),
-[<code style="color : #42f59b">OnDisconnected</code>](#LCU-Events-OnDisconnected),
-[<code style="color : #42f59b">OnGameflowPhaseChanged</code>](#LCU-Events-OnGameflowPhaseChanged) and
-[<code style="color : #42f59b">OnGameflowPhaseChanged</code>](#LCU-Events-OnGameflowPhaseChanged) are always included and their keys are their names.
+<code style="color : #42f59b">OnConnected</code>,
+<code style="color : #42f59b">OnDisconnected</code>,
+<code style="color : #42f59b">OnGameflowPhaseChanged</code> and
+<code style="color : #42f59b">OnGameflowPhaseChanged</code> events are always included and their keys are their names.
 
 ### Returns
-[<code style="color : #03BEFC">Dictionary</code>][Dictionary link]<[<code style="color : #03BEFC">string</code>][string link], [<code style="color : #03BEFC">List</code>][List link]<[<code style="color : #03BEFC">string</code>][string link]>> \
+<code style="color : #03BEFC">Dictionary</code><<code style="color : #03BEFC">string</code>, <code style="color : #03BEFC">List</code><<code style="color : #03BEFC">string</code>>> \
 Where Key is name of the enpoint / event and Value is a list of full names of methods subscribed to it.
 
-## [<code style="color : #65B800">async</code>][async link] `Request` {#LCU-Methods-Request}
+## `Request`
+<code style="color : #65B800">async</code>
+
 Sends a request to the specified endpoint.
 
 ### Parameters
-| Type | Name | Default | Description
-|:-:|:-:|:-:|:-
-| [<code style="color : #03BEFC">RequestMethod</code>][RequestMethod link] | `method` | - | The HTTP method to use for the request (e.g., `GET`, `POST`, `PUT`). |
-| [<code style="color : #03BEFC">string</code>][string link] | `endpoint` | - | The endpoint URL for the request (e.g., `/lol-gameflow/v1/gameflow-phase`). |
-| [<code style="color : #03BEFC">dynamic?</code>][dynamic link] | `data` <br/> (optional) | `null` | The optional data to include in the request body (e.g., for `POST` or `PUT`). Can be `null`. It gets serialized automatically |
-| [<code style="color : #03BEFC">bool</code>][bool link] | `ignoreReady` <br/> (optional) | `false` | If `true`, bypasses checks to ensure the LCU is ready before sending the request. |
+| Type | Name | Default | Description |
+|:-:|:-:|:-:|:-|
+| [`RequestMethod`][RequestMethod] | `method` | - | The HTTP method to use for the request (e.g., `GET`, `POST`, `PUT`). |
+| <code style="color : #03BEFC">string</code> | `endpoint` | - | The endpoint URL for the request (e.g., `/lol-gameflow/v1/gameflow-phase`). |
+| <code style="color : #03BEFC">dynamic?</code> | `data` <br/> (optional) | `null` | The optional data to include in the request body (e.g., for `POST` or `PUT`). Can be `null`. It gets serialized automatically. |
+| <code style="color : #03BEFC">bool</code> | `ignoreReady` <br/> (optional) | `false` | If `true`, bypasses checks to ensure the LCU is ready before sending the request. |
 
 ### Returns
-[<code style="color : #03BEFC">Task</code>][Task link]<[<code style="color : #03BEFC">HttpResponseMessage</code>][HttpResponseMessage link]> \
-A task that, when awaited, resolves to an [<code style="color : #03BEFC">HttpResponseMessage</code>][HttpResponseMessage link] representing the server's response.
+<code style="color : #03BEFC">Task</code><<code style="color : #03BEFC">HttpResponseMessage</code>> \
+A task that, when awaited, resolves to an <code style="color : #03BEFC">HttpResponseMessage</code> representing the server's response.
 
 ### Exceptions
 | Exception | Condition |
-|:-:|:-
-| [<code style="color : #FC5603">InvalidOperationException</code>][InvalidOperationException link] | Thrown if `LCU.IsConnected` is `false`. Setting `ignoreReady` to `true` will prevent that. |
-| [<code style="color : #FC5603">HttpRequestException</code>][HttpRequestException link] | Thrown if the HTTP request fails. |
+|:-:|:-|
+| <code style="color : #FC5603">InvalidOperationException</code> | Thrown if `LCU.IsConnected` is `false`. Setting `ignoreReady` to `true` will prevent that. |
+| <code style="color : #FC5603">HttpRequestException</code> | Thrown if the HTTP request fails. |
 
 ### Remarks
 - Generally leave `ignoreReady` as `false` unless you specifically want to access an endpoint between time of launching the .exe and the client being ready.
@@ -236,79 +252,33 @@ try
 }
 catch (Exception e) { Console.WriteLine(e.Message); }
 ```
-```json
-{
-  "availability": "chat",
-  "gameName": "Athame",
-  "gameTag": "brim",
-  "icon": 5959,
-  "id": "ab82dace-48fe-5179-b84c-49f172bb9dda@eu2.pvp.net",
-  "lastSeenOnlineTimestamp": null,
-  "lol": {
-    "championId": "",
-    "companionId": "40016",
-    "damageSkinId": "1",
-    "gameQueueType": "",
-    "gameStatus": "outOfGame",
-    "iconOverride": "companion",
-    "legendaryMasteryScore": "555",
-    "level": "522",
-    "mapId": "",
-    "mapSkinId": "66",
-    "puuid": "ab82dace-48fe-5179-b84c-49f172bb9dda",
-    "rankedLeagueDivision": "III",
-    "rankedLeagueQueue": "RANKED_SOLO_5x5",
-    "rankedLeagueTier": "DIAMOND",
-    "rankedLosses": "0",
-    "rankedPrevSeasonDivision": "IV",
-    "rankedPrevSeasonTier": "DIAMOND",
-    "rankedSplitRewardLevel": "0",
-    "rankedWins": "75",
-    "regalia": "{\"bannerType\":2,\"crestType\":1,\"selectedPrestigeCrest\":0}",
-    "skinVariant": "",
-    "skinname": ""
-  },
-  "name": "City Girl",
-  "obfuscatedSummonerId": 0,
-  "patchline": "live",
-  "pid": "ab82dace-48fe-5179-b84c-49f172bb9dda@eu2.pvp.net",
-  "platformId": "EUN1",
-  "product": "league_of_legends",
-  "productName": "",
-  "puuid": "ab82dace-48fe-5179-b84c-49f172bb9dda",
-  "statusMessage": "github/soulspine/LCU",
-  "summary": "",
-  "summonerId": 75743644,
-  "time": 0
-}
-```
 
-# Events {#LCU-Events}
+# LCU Events
 Events that are built-in to the LCU class.  Functions can be assigned or removed from them using the `+=` and `-=` operators.
-All of them should have no parameters and return [<code style="color : #03BEFC">void</code>][void link]. \
-Accessing [<code style="color : #FCCF03">GetMethodNamesForEvents</code>](#LCU-Methods-GetMethodNamesForEvents) will give you a list of all
+All of them should have no parameters and return type <code style="color : #03BEFC">void</code>. \
+Accessing [`GetMethodNamesForEvents()`][LCU.GetMethodNamesForEvents] will give you a list of all
 methods invoked by these events.
 
-### `OnConnected` {#LCU-Events-OnConnected}
+### `OnConnected`
 Fires when connection to the LCU is established.
 
-### `OnDisconnected` {#LCU-Events-OnDisconnected}
+### `OnDisconnected`
 Fires when connection to the LCU is lost regardless of the reason.
 
-### `OnGameflowPhaseChanged` {#LCU-Events-OnGameflowPhaseChanged}
-Fires when the gameflow phase changes. Its directly linked to automatically updating [`CurrentGameflowPhase`](#LCU-Properties-CurrentGameflowPhase) property.
+### `OnGameflowPhaseChanged`
+Fires when the gameflow phase changes. Its directly linked to automatically updating [`CurrentGameflowPhase`][LCU.CurrentGameflowPhase] property.
 
-### `OnLocalSummonerInfoChanged` {#LCU-Events-OnLocalSummonerInfoChanged}
-Fires when any field of local summoner's info changes. Its directly linked to automatically updating [`LocalSummoner`](#LCU-Properties-LocalSummoner) property.
+### `OnLocalSummonerInfoChanged`
+Fires when any field of local summoner's info changes. Its directly linked to automatically updating [`LocalSummoner`][LCU.LocalSummoner] property.
 
-# LOL {#LOL}
+# LOL
 TODO
 
-# Objects {#Objects}
+# Objects
 Reference for all custom objects used in the library. (WIP)
 
-## RequestMethod {#Objects-RequestMethod}
-An [<code style="color : #65B800">enum</code>][enum link] representing the HTTP methods that can be used in a request.
+## RequestMethod
+An <code style="color : #65B800">enum</code> representing the HTTP methods that can be used in a request.
 
 ### Members
 - **GET**
@@ -317,8 +287,8 @@ An [<code style="color : #65B800">enum</code>][enum link] representing the HTTP 
 - **DELETE**
 - **PUT**
 
-## GameflowPhase {#Objects-GameflowPhase}
-An [<code style="color : #65B800">enum</code>][enum link] representing all possible gameflow phases.
+## GameflowPhase
+An <code style="color : #65B800">enum</code> representing all possible gameflow phases.
 
 ### Members
 - **None** - default, when nothing is happening
@@ -333,106 +303,75 @@ An [<code style="color : #65B800">enum</code>][enum link] representing all possi
 - **PreEndOfGame** - honor screen and first stage with LP gained
 - **EndOfGame** - post game view with all players, items, K/D/A etc
 
-## SubscriptionMessage {#Objects-SubscriptionMessage}
-An [<code style="color : #03BEFC">object</code>][object link] representing an event message received from a subscribed endpoint.
+## SubscriptionMessage
+An <code style="color : #03BEFC">object</code> representing an event message received from a subscribed endpoint.
 
 ### Properties
-- [<code style="color : #03BEFC">string</code>][string link] **Endpoint** - the endpoint that the message is associated with
-- [<code style="color : #03BEFC">string</code>][string link] **Type** - different events have different types of messages, this is a string representing the type
-- [<code style="color : #03BEFC">JToken</code>][JToken link] **Data** - data received, it could be any type so it's needed to cast it to the correct type
+- <code style="color : #03BEFC">string</code> **Endpoint** - the endpoint that the message is associated with
+- <code style="color : #03BEFC">string</code> **Type** - different events have different types of messages, this is a string representing the type
+- <code style="color : #03BEFC">JToken</code> **Data** - data received, it could be any type so it's needed to cast it to the correct type
 
-## Summoner {#Objects-Summoner}
-An [<code style="color : #03BEFC">object</code>][object link] representing a summoner in the LCU.
-
-### Properties
-- [<code style="color : #03BEFC">long</code>][int link] **accountId**
-- [<code style="color : #03BEFC">string</code>][string link] **displayName** - name account had before naming scheme of NAME#TAGLINE was introduced, basically old Summoner Name
-- [<code style="color : #03BEFC">string</code>][string link] **gameName**
-- [<code style="color : #03BEFC">string</code>][string link] **internalName** - `displayName` with no whitespaces
-- [<code style="color : #03BEFC">bool</code>][bool link] **nameChangeFlag** - if `true`, the summoner has changed their name and data is not up to date
-- [<code style="color : #03BEFC">int</code>][int link] **percentCompleteForNextLevel**
-- [<code style="color : #03BEFC">string</code>][string link] **privacy**
-- [<code style="color : #03BEFC">RerollPoints</code>][RerollPoints link] **rerollPoints** - ARAM reroll points
-- [<code style="color : #03BEFC">long</code>][int link] **summonerId**
-- [<code style="color : #03BEFC">int</code>][int link] **summonerLevel**
-- [<code style="color : #03BEFC">string</code>][string link] **tagLine**
-- [<code style="color : #03BEFC">bool</code>][bool link] **unnamed**
-- [<code style="color : #03BEFC">long</code>][int link] **xpSinceLastLevel**
-- [<code style="color : #03BEFC">long</code>][int link] **xpUntilNextLevel**
-
-## RerollPoints {#Objects-RerollPoints}
-An [<code style="color : #03BEFC">object</code>][object link] representing ARAM reroll points.
+## Summoner
+An <code style="color : #03BEFC">object</code> representing a summoner in the LCU.
 
 ### Properties
-- [<code style="color : #03BEFC">int</code>][int link] **currentPoints**
-- [<code style="color : #03BEFC">int</code>][int link] **maxRolls**
-- [<code style="color : #03BEFC">int</code>][int link] **numberOfRolls**
-- [<code style="color : #03BEFC">int</code>][int link] **pointsCostToRoll**
-- [<code style="color : #03BEFC">int</code>][int link] **pointsToReroll**
+- <code style="color : #03BEFC">long</code> **accountId**
+- <code style="color : #03BEFC">string</code> **displayName** - name account had before naming scheme of NAME#TAGLINE was introduced, basically old Summoner Name
+- <code style="color : #03BEFC">string</code> **gameName**
+- <code style="color : #03BEFC">string</code> **internalName** - `displayName` with no whitespaces
+- <code style="color : #03BEFC">bool</code> **nameChangeFlag** - if `true`, the summoner has changed their name and data is not up to date
+- <code style="color : #03BEFC">int</code> **percentCompleteForNextLevel**
+- <code style="color : #03BEFC">string</code> **privacy**
+- [`RerollPoints`][RerollPoints] **rerollPoints** - ARAM reroll points
+- <code style="color : #03BEFC">long</code> **summonerId**
+- <code style="color : #03BEFC">int</code> **summonerLevel**
+- <code style="color : #03BEFC">string</code> **tagLine**
+- <code style="color : #03BEFC">bool</code> **unnamed**
+- <code style="color : #03BEFC">long</code> **xpSinceLastLevel**
+- <code style="color : #03BEFC">long</code> **xpUntilNextLevel**
+
+## `RerollPoints`
+An <code style="color : #03BEFC">object</code> representing ARAM reroll points.
+
+### Properties
+- <code style="color : #03BEFC">int</code> **currentPoints**
+- <code style="color : #03BEFC">int</code> **maxRolls**
+- <code style="color : #03BEFC">int</code> **numberOfRolls**
+- <code style="color : #03BEFC">int</code> **pointsCostToRoll**
+- <code style="color : #03BEFC">int</code> **pointsToReroll**
 
 [//]: <> (Other repos links)
 [PoniLCU]: https://github.com/Ponita0/PoniLCU
 [Needlework.NET]: https://github.com/BlossomiShymae/Needlework.Net
 [Kunc.RiotGames]: https://github.com/AoshiW/Kunc.RiotGames
 
-[//]: <> (DTO links)
-[Summoner link]: #Objects-Summoner
-[GameflowPhase link]: #Objects-GameflowPhase
-[RequestMethod link]: #Objects-RequestMethod
-[SubscriptionMessage link]: #Objects-SubscriptionMessage
-[RerollPoints link]: #Objects-RerollPoints
+[//]: <> (Properties Links)
+[LCU.IsConnected]: #isconnected
+[LCU.LocalSummoner]: #localsummoner
+[LCU.CurrentGameflowPhase]: #currentgameflowphase
+[LCU.PreserveSubscriptions]: #preservesubscriptions
+[LCU.WriteAllEventsToConsole]: #writealleventstoconsole
 
-[//]: <> (Types Links)
-[object link]: https://learn.microsoft.com/en-us/dotnet/api/system.object
-[bool link]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/bool
-[void link]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/void
-[int link]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/integral-numeric-types
-[string link]: https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/strings
-[Task link]: https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task
-[TaskT link]: https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1
-[Action link]: https://learn.microsoft.com/en-us/dotnet/api/system.action]
-[ActionT link]: https://learn.microsoft.com/en-us/dotnet/api/system.action-1
-[dynamic link]: https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/interop/using-type-dynamic
-[HttpResponseMessage link]: https://learn.microsoft.com/en-us/dotnet/api/system.net.http.httpresponsemessage
-[JToken link]: https://www.newtonsoft.com/json/help/html/T_Newtonsoft_Json_Linq_JToken.htm
-[Dictionary link]: https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2
-[List link]: https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1
+[//]: <> (Methods Links)
+[LCU.TryConnect]: #tryconnect
+[LCU.ForceConnect]: #forceconnect
+[LCU.Disconnect]: #disconnect
+[LCU.Subscribe]: #subscribe
+[LCU.Unsubscribe]: #unsubscribe
+[LCU.GetMethodNamesForEvents]: #getmethodnamesforevents
+[LCU.Request]: #request
 
-[//]: <> (Error Links)
-[InvalidOperationException link]: https://learn.microsoft.com/en-us/dotnet/api/system.invalidoperationexception
-[HttpRequestException link]: https://learn.microsoft.com/en-us/dotnet/api/system.net.http.httprequestexception
+[//]: <> (Events Links)
+[LCU.OnConnected]: #onconnected
+[LCU.OnDisconnected]: #ondisconnected
+[LCU.OnGameflowPhaseChanged]: #ongameflowphasechanged
+[LCU.OnLocalSummonerInfoChanged]: #onlocalsummonerinfochanged
 
-[//]: <> (Keywords Links)
-[readonly link]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/readonly
-[async link]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/async
-[enum link]: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/enum
+[//]: <> (Objects Links)
+[RequestMethod]: #requestmethod
+[GameflowPhase]: #gameflowphase
+[SubscriptionMessage]: #subscriptionmessage
+[Summoner]: #summoner
+[RerollPoints]: #rerollpoints
 
-[//]: <> (Color templates)
-[type template]: <> (<code style="color : #03BEFC">type</code>)
-[keyword template]: <> (<code style="color : #65B800">keyword</code>)
-[method template]: <> (<code style="color : #FCCF03">method</code>)
-[event template]: <> (<code style="color : #42F59B">event</code>)
-[exception template]: <> (<code style="color : #FC5603">exception</code>)
 
-[blue1]: #CDFAFA
-[blue2]: #0AC8B9
-[blue3]: #0397AB
-[blue4]: #005A82
-[blue5]: #0A323C
-[blue6]: #091428
-[blue7]: #0A1428
-
-[gold1]: #F0E6D2
-[gold2]: #C8AA6E
-[gold3]: #C8AA6E
-[gold4]: #C89B3C
-[gold5]: #785A28
-[gold6]: #463714
-[gold7]: #32281E
-
-[grey1]: #A09B8C
-[grey1.5]: #5B5A56
-[grey2]: #3C3C41
-[grey3]: #1E2328
-[grey cool]: #1E282D
-[hextech black]: #010A13
