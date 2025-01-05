@@ -6,6 +6,16 @@
     <Nullable>enable</Nullable>
     <RootNamespace>WildRune</RootNamespace>
     <AssemblyName>WildRune</AssemblyName>
+	<PackageId>soulspine.WildRune</PackageId>
+	<Version>2.1.0</Version>
+	  <VersionSuffix>Major</VersionSuffix>
+	<Product>WildRune</Product>
+	<RepositoryUrl>https://github.com/soulspine/WildRune</RepositoryUrl>
+	<Authors>soulspine</Authors>
+	<Description>Wrapper for League of Legends' local APIs.</Description>
+	  <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+	  <PackageReleaseNotes>Change LCU.LocalSummonerRegion fetching to use codes used in external API.</PackageReleaseNotes>
+	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
