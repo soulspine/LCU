@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.WebSockets;
 using System.Reflection;
 using WildRune.DTOs.LCU;
+using WildRune.DTOs.LOL;
 
 namespace WildRune
 {
@@ -29,7 +30,7 @@ namespace WildRune
         /// <summary>
         /// Represents the local summoner's region.
         /// </summary>
-        public static string? LocalSummonerRegion { get; private set; } = null;
+        public static PlayerRegion? LocalSummonerRegion { get; private set; } = null;
 
         /// <summary>
         /// Event invoked when the connection to the API and Websocket is established.
@@ -209,10 +210,10 @@ namespace WildRune
             else return;
 
             // getting local summoner region
-            var regionRequest = Request(RequestMethod.GET, "/riotclient/region-locale", ignoreReady: true).Result;
+            var regionRequest = Request(RequestMethod.GET, "/lol-match-history/v1/products/lol/current-summoner/matches?begIndex=0&endIndex=0", ignoreReady: true).Result;
             if (regionRequest.IsSuccessStatusCode)
             {
-                LocalSummonerRegion = JObject.Parse(regionRequest.Content.ReadAsStringAsync().Result).GetValue("region")!.ToString();
+                LocalSummonerRegion = Enum.Parse<PlayerRegion>(JObject.Parse(regionRequest.Content.ReadAsStringAsync().Result).GetValue("platformId")!.ToString());
             }
             else return;
 
