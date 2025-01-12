@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Net;
 using System.Net.WebSockets;
 using System.Reflection;
@@ -72,6 +73,7 @@ namespace WildRune
         /// Whether to write all incoming events to console. Defaults to false.
         /// </summary>
         public static bool WriteAllEventsToConsole { get; set; } = false;
+        public static bool WriteAllEventsToTrace { get; set; } = false;
 
         private static bool connecting = false;
         private static bool disconnecting = false;
@@ -86,11 +88,11 @@ namespace WildRune
         /// Also looks up all methods bound to subscribed events coming from the websocket.
         /// </summary>
         /// <returns>
-        /// Dictionary with <see cref="string"/> keys being the endpoint or event names and values being a list of <see cref="string"/>s with method's names.
+        /// Dictionary with <see cref="string"/> keys being the endpoint or event names and values being a list of <see cref="MethodInfo"/>s with methods.
         /// </returns>
-        public static Dictionary<string, List<string>> GetMethodNamesForEvents()
+        public static Dictionary<string, List<MethodInfo>> GetMethodsForEvents()
         {
-            Dictionary<string, List<string>> eventMethods = new();
+            Dictionary<string, List<MethodInfo>> eventMethods = new();
 
             // methods bound to internal delegates
             foreach (var eventInfo in typeof(LCU).GetEvents())
@@ -99,14 +101,16 @@ namespace WildRune
 
                 var invocations = eventAction?.GetInvocationList();
 
-                List<string> invocationsNames = new List<string>();
+                if (invocations == null) invocations = new Delegate[0];
 
-                foreach (var invocation in invocations!)
+                List<MethodInfo> invocationMethods = new List<MethodInfo>();
+
+                foreach (var invocation in invocations)
                 {
-                    invocationsNames.Add($"{invocation.Method.DeclaringType!.FullName}.{invocation.Method.Name}");
+                    invocationMethods.Add(invocation.Method);
                 }
 
-                eventMethods.Add(eventInfo.Name, invocationsNames);
+                eventMethods.Add(eventInfo.Name, invocationMethods);
             }
 
             // methods bound to subscribed events
@@ -114,17 +118,19 @@ namespace WildRune
             {
                 var actions = subscriptions[endpoint];
 
-                List<string> actionsNames = new List<string>();
+                List<MethodInfo> actionsMethods = new List<MethodInfo>();
 
                 foreach (var action in actions)
                 {
-                    actionsNames.Add($"{action.Method.DeclaringType!.FullName}.{action.Method.Name}");
+                    actionsMethods.Add(action.Method);
                 }
 
-                eventMethods.Add(endpoint, actionsNames);
+                eventMethods.Add(endpoint, actionsMethods);
             }
+
             return eventMethods;
         }
+
 
         /// <summary>
         /// Connects to LCU's API and Websocket. It will repeatedly invoke <see cref="TryConnect"/>, blocking the thread until it succeeds.
@@ -388,6 +394,7 @@ namespace WildRune
                     messageBuffer.Clear();
 
                     if (WriteAllEventsToConsole) Console.WriteLine(message);
+                    if (WriteAllEventsToTrace) Trace.WriteLine(message);
 
                     JArray arr = JArray.Parse(message);
 

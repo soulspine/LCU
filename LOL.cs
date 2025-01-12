@@ -118,7 +118,7 @@ namespace WildRune
                         OnGameUpdate?.Invoke();
                         if ((previousEvents != null) && (previousEvents.Count != Events!.Count))
                         {
-                            for (int i = Events.Count - 1; i >= previousEvents.Count; i-- ) OnGameEvent?.Invoke(Events[i]);
+                            for (int i = Events.Count - 1; i >= previousEvents.Count; i--) OnGameEvent?.Invoke(Events[i]);
                         }
                     }
                 }
@@ -132,6 +132,14 @@ namespace WildRune
                 }
             }
 
+            public static void ClearOnGameEvent() => OnGameEvent = null;
+            public static void ClearOnGameUpdate() => OnGameUpdate = null;
+            public static void ClearOnFailedConnection() => OnFailedConnection = null;
+
+            public static void StopIfNoActions()
+            {
+                if ((IsRunning) && (OnGameEvent == null) && (OnGameUpdate == null) && (OnFailedConnection == null)) Stop();
+            }
         }
 
 

@@ -14,7 +14,7 @@
 	<Authors>soulspine</Authors>
 	<Description>Wrapper for League of Legends' local APIs.</Description>
 	  <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
-	  <PackageReleaseNotes>Change LCU.LocalSummonerRegion fetching to use codes used in external API.</PackageReleaseNotes>
+	  <PackageReleaseNotes>Replace WIMC with System.Management.</PackageReleaseNotes>
 	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Management" Version="9.0.0" />
   </ItemGroup>
 
 </Project>
