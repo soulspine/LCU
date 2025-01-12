@@ -44,92 +44,93 @@
                 }
             }
 
-            internal static Dictionary<string, string>? GetCmdArgs(string? processName)
+            public static Dictionary<string, string>? GetCmdArgs(string? processName)
             {
-                if ((processName == null) || (!IsRunning(processName))) return null;
+                if (string.IsNullOrWhiteSpace(processName)) return null;
 
                 if (!processName.EndsWith(".exe")) processName += ".exe";
 
-                string command = $"wmic process where \"caption='{processName}'\" get CommandLine";
-                System.Diagnostics.Process p = new System.Diagnostics.Process();
-                p.StartInfo.FileName = "cmd.exe";
-                p.StartInfo.Arguments = "/c " + command;
-                p.StartInfo.RedirectStandardError = true;
-                p.StartInfo.RedirectStandardOutput = true;
-                p.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-                p.StartInfo.UseShellExecute = false;
-                p.Start();
-                string output = p.StandardOutput.ReadToEnd();
-                p.WaitForExit();
-
-                string argument = "";
-                bool inQuotes = false;
-                bool equalsFound = false;
-
-                Dictionary<string, string> outputDict = new Dictionary<string, string>();
-
-                foreach (char c in output)
+                try
                 {
-                    switch (c)
+                    string query = $"SELECT CommandLine FROM Win32_Process WHERE Name = '{processName}'";
+                    using (var searcher = new System.Management.ManagementObjectSearcher(query))
+                    using (var results = searcher.Get())
                     {
-                        // skip
-                        case ' ':
-                            {
-                                break;
-                            }
+                        foreach (var process in results)
+                        {
+                            string? commandLine = process["CommandLine"]?.ToString();
+                            if (string.IsNullOrWhiteSpace(commandLine)) return null;
 
-                        // equals found, output will have a value
-                        case '=':
-                            {
-                                equalsFound = true;
-                                argument += c;
-                                break;
-                            }
+                            var args = new Dictionary<string, string>();
+                            string argument = "";
+                            bool inQuotes = false;
+                            bool equalsFound = false;
 
-                        // argument boundary
-                        case '\"':
+                            foreach (char c in commandLine)
                             {
-                                // at the start
-                                if (!inQuotes)
+                                switch (c)
                                 {
-                                    inQuotes = true;
+                                    case ' ':
+                                        if (!inQuotes && !string.IsNullOrWhiteSpace(argument))
+                                        {
+                                            AddArgumentToDictionary(argument, args, ref equalsFound);
+                                            argument = "";
+                                        }
+                                        else if (inQuotes)
+                                        {
+                                            argument += c;
+                                        }
+                                        break;
+
+                                    case '=':
+                                        equalsFound = true;
+                                        argument += c;
+                                        break;
+
+                                    case '\"':
+                                        inQuotes = !inQuotes;
+                                        break;
+
+                                    default:
+                                        argument += c;
+                                        break;
                                 }
-                                // at the end
-                                else
-                                {
-                                    argument = argument.Replace("--", "");
-                                    if (equalsFound)
-                                    {
-                                        string[] split;
-                                        split = argument.Split('=');
-                                        outputDict.Add(split[0], split[1]);
-                                    }
-                                    else
-                                    {
-                                        outputDict.Add(argument, "");
-                                    }
-
-                                    inQuotes = false;
-                                    equalsFound = false;
-                                    argument = "";
-                                }
-
-
-                                break;
                             }
-                        default:
+
+                            if (!string.IsNullOrWhiteSpace(argument))
                             {
-                                if (inQuotes) argument += c;
-                                break;
+                                AddArgumentToDictionary(argument, args, ref equalsFound);
                             }
+
+                            return args;
+                        }
                     }
                 }
+                catch
+                {
+                    return null;
+                }
 
-                // this is here to destroy past outputDict object, specifically when league was launching, it would skyrocket memory usage if this was not here
-                GC.Collect();
+                return null;
 
-                return outputDict;
+                static void AddArgumentToDictionary(string argument, Dictionary<string, string> args, ref bool equalsFound)
+                {
+                    // Remove leading dashes from keys
+                    argument = argument.TrimStart('-');
+
+                    if (equalsFound)
+                    {
+                        string[] split = argument.Split(new[] { '=' }, 2);
+                        args[split[0]] = split.Length > 1 ? split[1] : "";
+                    }
+                    else
+                    {
+                        args[argument] = "";
+                    }
+                    equalsFound = false;
+                }
             }
+
         }
 
         internal static class Endpoint
